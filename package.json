@@ -2,7 +2,7 @@
   "name": "quote-champion",
   "version": "1.0.0",
   "description": "A web application for ranking quotes using a tournament system",
-  "homepage": "https://jose-pereira.github.io/quote-champion",
+  "homepage": "https://jose-pereira.github.io/quotes_champion",
   "main": "src/index.js",
   "scripts": {
     "start": "react-scripts start",
