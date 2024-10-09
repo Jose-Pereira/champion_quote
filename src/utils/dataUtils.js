@@ -1,13 +1,14 @@
 export async function loadQuotes() {
   try {
-    const response = await fetch('3_star_quotes.json');
+    const response = await fetch('/pre_process/3_star_quotes.json');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const quotes = await response.json();
     return quotes.map((quote, index) => ({
       id: index.toString(),
-      text: quote
+      text: quote.highlight,
+      bookTitle: quote.bookTitle
     }));
   } catch (error) {
     console.error('Error loading quotes:', error);
