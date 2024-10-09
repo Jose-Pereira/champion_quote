@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/quotes_champion/static/css/main.63856e8b.css",
-    "main.js": "/quotes_champion/static/js/main.b87c3805.js",
-    "index.html": "/quotes_champion/index.html",
-    "main.63856e8b.css.map": "/quotes_champion/static/css/main.63856e8b.css.map",
-    "main.b87c3805.js.map": "/quotes_champion/static/js/main.b87c3805.js.map"
+    "main.css": "/champion_quote/static/css/main.63856e8b.css",
+    "main.js": "/champion_quote/static/js/main.b87c3805.js",
+    "index.html": "/champion_quote/index.html",
+    "main.63856e8b.css.map": "/champion_quote/static/css/main.63856e8b.css.map",
+    "main.b87c3805.js.map": "/champion_quote/static/js/main.b87c3805.js.map"
   },
   "entrypoints": [
     "static/css/main.63856e8b.css",
