@@ -1,6 +1,6 @@
 export async function loadQuotes() {
   try {
-    const response = await fetch('https://jose-pereira.github.io/quotes_champion/pre_process/3_star_quotes.json');
+    const response = await fetch('https://jose-pereira.github.io/champion_quote/pre_process/3_star_quotes.json');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
