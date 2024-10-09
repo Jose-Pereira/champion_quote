@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/quotes_champion/static/css/main.63856e8b.css",
+    "main.js": "/quotes_champion/static/js/main.9aa346b0.js",
+    "index.html": "/quotes_champion/index.html",
+    "main.63856e8b.css.map": "/quotes_champion/static/css/main.63856e8b.css.map",
+    "main.9aa346b0.js.map": "/quotes_champion/static/js/main.9aa346b0.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.63856e8b.css",
+    "static/js/main.9aa346b0.js"
+  ]
+}
