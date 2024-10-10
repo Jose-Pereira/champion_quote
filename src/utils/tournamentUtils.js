@@ -7,7 +7,8 @@ function shuffleArray(array) {
 }
 
 export function conductMiniTournament(quotes) {
-  const selectedQuotes = shuffleArray(quotes).slice(0, 50);
+  // Reduced from 50 to 10 for faster testing
+  const selectedQuotes = shuffleArray(quotes).slice(0, 10);
   const matches = [];
 
   for (let i = 0; i < selectedQuotes.length; i += 2) {
@@ -26,8 +27,8 @@ export function aggregateScores(miniTournaments) {
   const scores = {};
 
   miniTournaments.forEach(tournament => {
-    tournament.slice(0, 4).forEach((match, index) => {
-      const points = 4 - index;
+    tournament.forEach((match, index) => {
+      const points = tournament.length - index;
       const winnerId = match.winner;
       scores[winnerId] = (scores[winnerId] || 0) + points;
     });

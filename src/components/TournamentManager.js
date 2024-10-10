@@ -14,7 +14,11 @@ function TournamentManager({ quotes }) {
   const [stats, setStats] = useState({
     matchesCompleted: 0,
     quotesInContention: quotes.length,
+    topQuotes: [],
   });
+
+  // Reduced number of mini-tournaments for testing
+  const NUM_MINI_TOURNAMENTS = 3;
 
   useEffect(() => {
     const savedState = loadState();
@@ -33,6 +37,7 @@ function TournamentManager({ quotes }) {
 
   useEffect(() => {
     saveState({ phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound });
+    console.log('Current state:', { phase, miniTournaments, aggregatedScores, stats });
   }, [phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound]);
 
   const startNewTournament = () => {
@@ -45,12 +50,13 @@ function TournamentManager({ quotes }) {
     setStats({
       matchesCompleted: 0,
       quotesInContention: quotes.length,
+      topQuotes: [],
     });
     conductNextMiniTournament();
   };
 
   const conductNextMiniTournament = () => {
-    if (miniTournaments.length < 10) {
+    if (miniTournaments.length < NUM_MINI_TOURNAMENTS) {
       const newMiniTournament = conductMiniTournament(quotes);
       setMiniTournaments(prevTournaments => [...prevTournaments, newMiniTournament]);
       setCurrentMatch(newMiniTournament[0]);
@@ -79,6 +85,7 @@ function TournamentManager({ quotes }) {
     setStats(prevStats => ({
       ...prevStats,
       quotesInContention: 16,
+      topQuotes: topQuotes,
     }));
   };
 
@@ -131,6 +138,16 @@ function TournamentManager({ quotes }) {
         <p>Matches Completed: {stats.matchesCompleted}</p>
         <p>Quotes in Contention: {stats.quotesInContention}</p>
         {phase === 'final' && <p>Current Round: {currentRound + 1}/4</p>}
+        {stats.topQuotes.length > 0 && (
+          <div>
+            <h4>Top 16 Quotes:</h4>
+            <ol>
+              {stats.topQuotes.map((quote, index) => (
+                <li key={quote.id}>{quote.text.substring(0, 50)}...</li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
       {currentMatch && (
         <QuoteComparison
