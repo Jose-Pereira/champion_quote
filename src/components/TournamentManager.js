@@ -30,6 +30,7 @@ function TournamentManager({ quotes }) {
       setStats(savedState.stats);
       setSwissTournament(savedState.swissTournament || []);
       setCurrentRound(savedState.currentRound || 0);
+      console.log('Loaded saved state:', savedState);
     } else {
       startNewTournament();
     }
@@ -37,10 +38,11 @@ function TournamentManager({ quotes }) {
 
   useEffect(() => {
     saveState({ phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound });
-    console.log('Current state:', { phase, miniTournaments, aggregatedScores, stats });
+    console.log('Current state:', { phase, miniTournaments, aggregatedScores, stats, swissTournament, currentRound });
   }, [phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound]);
 
   const startNewTournament = () => {
+    console.log('Starting new tournament');
     setPhase('initial');
     setMiniTournaments([]);
     setAggregatedScores({});
@@ -57,15 +59,18 @@ function TournamentManager({ quotes }) {
 
   const conductNextMiniTournament = () => {
     if (miniTournaments.length < NUM_MINI_TOURNAMENTS) {
+      console.log(`Conducting mini-tournament ${miniTournaments.length + 1}`);
       const newMiniTournament = conductMiniTournament(quotes);
       setMiniTournaments(prevTournaments => [...prevTournaments, newMiniTournament]);
       setCurrentMatch(newMiniTournament[0]);
     } else {
+      console.log('All mini-tournaments completed');
       finalizeMiniTournaments();
     }
   };
 
   const finalizeMiniTournaments = () => {
+    console.log('Finalizing mini-tournaments');
     setPhase('scoring');
     const scores = aggregateScores(miniTournaments);
     setAggregatedScores(scores);
@@ -73,11 +78,13 @@ function TournamentManager({ quotes }) {
   };
 
   const startFinalPhase = () => {
+    console.log('Starting final phase');
     setPhase('final');
     const topQuotes = Object.entries(aggregatedScores)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 16)
       .map(([id]) => quotes.find(q => q.id === id));
+    console.log('Top 16 quotes:', topQuotes);
     const newSwissTournament = conductSwissTournament(topQuotes);
     setSwissTournament(newSwissTournament);
     setCurrentMatch(newSwissTournament[0][0]);
@@ -90,6 +97,7 @@ function TournamentManager({ quotes }) {
   };
 
   const handleVote = (winnerId) => {
+    console.log(`Vote recorded for quote ${winnerId}`);
     setStats(prevStats => ({
       ...prevStats,
       matchesCompleted: prevStats.matchesCompleted + 1,
@@ -144,6 +152,7 @@ function TournamentManager({ quotes }) {
   };
 
   const finalizeTournament = () => {
+    console.log('Finalizing tournament');
     setPhase('completed');
     setCurrentMatch(null);
     const finalRankings = swissTournament[3]
@@ -159,13 +168,14 @@ function TournamentManager({ quotes }) {
         <h3>Statistics</h3>
         <p>Matches Completed: {stats.matchesCompleted}</p>
         <p>Quotes in Contention: {stats.quotesInContention}</p>
+        {phase === 'initial' && <p>Mini-tournaments completed: {miniTournaments.length}/{NUM_MINI_TOURNAMENTS}</p>}
         {phase === 'final' && <p>Current Round: {currentRound + 1}/4</p>}
         {stats.topQuotes.length > 0 && (
           <div>
             <h4>Top 16 Quotes:</h4>
             <ol>
               {stats.topQuotes.map((quote, index) => (
-                <li key={quote.id}>{quote.text.substring(0, 50)}...</li>
+                <li key={quote.id}>{quote.text.substring(0, 50)}... (Score: {aggregatedScores[quote.id]})</li>
               ))}
             </ol>
           </div>
