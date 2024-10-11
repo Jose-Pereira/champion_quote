@@ -100,6 +100,17 @@ function TournamentManager({ quotes }) {
       const currentTournament = miniTournaments[currentTournamentIndex];
       const nextMatchIndex = currentTournament.findIndex(match => match === currentMatch) + 1;
 
+      // Update the current match with the winner
+      const updatedMatch = { ...currentMatch, winner: winnerId };
+      const updatedTournament = [...currentTournament];
+      updatedTournament[nextMatchIndex - 1] = updatedMatch;
+
+      setMiniTournaments(prevTournaments => {
+        const newTournaments = [...prevTournaments];
+        newTournaments[currentTournamentIndex] = updatedTournament;
+        return newTournaments;
+      });
+
       if (nextMatchIndex < currentTournament.length) {
         setCurrentMatch(currentTournament[nextMatchIndex]);
       } else {
@@ -109,6 +120,17 @@ function TournamentManager({ quotes }) {
       const currentMatchIndex = swissTournament[currentRound].findIndex(match => match === currentMatch);
       const winner = currentMatch.quote1.id === winnerId ? currentMatch.quote1 : currentMatch.quote2;
       winner.score = (winner.score || 0) + 1;
+
+      // Update the current match with the winner
+      const updatedMatch = { ...currentMatch, winner: winnerId };
+      const updatedRound = [...swissTournament[currentRound]];
+      updatedRound[currentMatchIndex] = updatedMatch;
+
+      setSwissTournament(prevTournament => {
+        const newTournament = [...prevTournament];
+        newTournament[currentRound] = updatedRound;
+        return newTournament;
+      });
 
       if (currentMatchIndex < swissTournament[currentRound].length - 1) {
         setCurrentMatch(swissTournament[currentRound][currentMatchIndex + 1]);
