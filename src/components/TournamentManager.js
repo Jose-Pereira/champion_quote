@@ -1,35 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import QuoteComparison from './QuoteComparison';
-import { conductMiniTournament, aggregateScores, conductSwissTournament } from '../utils/tournamentUtils';
+import { initializeTournament, advanceToNextRound, getRoundName, getFinalRankings } from '../utils/tournamentUtils';
 import { saveState, loadState } from '../utils/dataUtils';
 
 function TournamentManager({ quotes }) {
   const [phase, setPhase] = useState('initial');
-  const [miniTournaments, setMiniTournaments] = useState([]);
-  const [aggregatedScores, setAggregatedScores] = useState({});
+  const [currentMatches, setCurrentMatches] = useState([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [finalRankings, setFinalRankings] = useState([]);
-  const [currentMatch, setCurrentMatch] = useState(null);
-  const [swissTournament, setSwissTournament] = useState([]);
-  const [currentRound, setCurrentRound] = useState(0);
   const [stats, setStats] = useState({
     matchesCompleted: 0,
-    quotesInContention: quotes.length,
-    topQuotes: [],
+    quotesInContention: 64,
+    currentRound: '',
   });
-
-  // Reduced number of mini-tournaments for testing
-  const NUM_MINI_TOURNAMENTS = 3;
+  const [semifinalists, setSemifinalists] = useState([]);
 
   useEffect(() => {
     const savedState = loadState();
     if (savedState) {
       setPhase(savedState.phase);
-      setMiniTournaments(savedState.miniTournaments);
-      setAggregatedScores(savedState.aggregatedScores);
+      setCurrentMatches(savedState.currentMatches);
+      setCurrentMatchIndex(savedState.currentMatchIndex);
       setFinalRankings(savedState.finalRankings);
       setStats(savedState.stats);
-      setSwissTournament(savedState.swissTournament || []);
-      setCurrentRound(savedState.currentRound || 0);
+      setSemifinalists(savedState.semifinalists || []);
       console.log('Loaded saved state:', savedState);
     } else {
       startNewTournament();
@@ -37,128 +31,67 @@ function TournamentManager({ quotes }) {
   }, []);
 
   useEffect(() => {
-    saveState({ phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound });
-    console.log('Current state:', { phase, miniTournaments, aggregatedScores, stats, swissTournament, currentRound });
-  }, [phase, miniTournaments, aggregatedScores, finalRankings, stats, swissTournament, currentRound]);
+    saveState({ phase, currentMatches, currentMatchIndex, finalRankings, stats, semifinalists });
+    console.log('Current state:', { phase, currentMatches, currentMatchIndex, stats });
+  }, [phase, currentMatches, currentMatchIndex, finalRankings, stats, semifinalists]);
 
   const startNewTournament = () => {
     console.log('Starting new tournament');
-    setPhase('initial');
-    setMiniTournaments([]);
-    setAggregatedScores({});
+    const initialMatches = initializeTournament(quotes);
+    setPhase('ongoing');
+    setCurrentMatches(initialMatches);
+    setCurrentMatchIndex(0);
     setFinalRankings([]);
-    setSwissTournament([]);
-    setCurrentRound(0);
+    setSemifinalists([]);
     setStats({
       matchesCompleted: 0,
-      quotesInContention: quotes.length,
-      topQuotes: [],
+      quotesInContention: 64,
+      currentRound: getRoundName(initialMatches.length),
     });
-    conductNextMiniTournament();
-  };
-
-  const conductNextMiniTournament = () => {
-    if (miniTournaments.length < NUM_MINI_TOURNAMENTS) {
-      console.log(`Conducting mini-tournament ${miniTournaments.length + 1}`);
-      const newMiniTournament = conductMiniTournament(quotes);
-      setMiniTournaments(prevTournaments => [...prevTournaments, newMiniTournament]);
-      setCurrentMatch(newMiniTournament[0]);
-    } else {
-      console.log('All mini-tournaments completed');
-      finalizeMiniTournaments();
-    }
-  };
-
-  const finalizeMiniTournaments = () => {
-    console.log('Finalizing mini-tournaments');
-    setPhase('scoring');
-    const scores = aggregateScores(miniTournaments);
-    setAggregatedScores(scores);
-    startFinalPhase();
-  };
-
-  const startFinalPhase = () => {
-    console.log('Starting final phase');
-    setPhase('final');
-    const topQuotes = Object.entries(aggregatedScores)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 16)
-      .map(([id]) => quotes.find(q => q.id === id));
-    console.log('Top 16 quotes:', topQuotes);
-    const newSwissTournament = conductSwissTournament(topQuotes);
-    setSwissTournament(newSwissTournament);
-    setCurrentMatch(newSwissTournament[0][0]);
-    setCurrentRound(0);
-    setStats(prevStats => ({
-      ...prevStats,
-      quotesInContention: 16,
-      topQuotes: topQuotes,
-    }));
   };
 
   const handleVote = (winnerId) => {
     console.log(`Vote recorded for quote ${winnerId}`);
+    const updatedMatches = [...currentMatches];
+    updatedMatches[currentMatchIndex].winner = quotes.find(q => q.id === winnerId);
+    setCurrentMatches(updatedMatches);
+
     setStats(prevStats => ({
       ...prevStats,
       matchesCompleted: prevStats.matchesCompleted + 1,
     }));
 
-    if (phase === 'initial') {
-      const currentTournamentIndex = miniTournaments.length - 1;
-      const currentTournament = miniTournaments[currentTournamentIndex];
-      const nextMatchIndex = currentTournament.findIndex(match => match === currentMatch) + 1;
+    if (currentMatchIndex < currentMatches.length - 1) {
+      setCurrentMatchIndex(prevIndex => prevIndex + 1);
+    } else {
+      advanceRound();
+    }
+  };
 
-      // Update the current match with the winner
-      const updatedMatch = { ...currentMatch, winner: winnerId };
-      const updatedTournament = [...currentTournament];
-      updatedTournament[nextMatchIndex - 1] = updatedMatch;
+  const advanceRound = () => {
+    if (currentMatches.length > 1) {
+      const nextRoundMatches = advanceToNextRound(currentMatches);
+      setCurrentMatches(nextRoundMatches);
+      setCurrentMatchIndex(0);
+      setStats(prevStats => ({
+        ...prevStats,
+        quotesInContention: nextRoundMatches.length * 2,
+        currentRound: getRoundName(nextRoundMatches.length),
+      }));
 
-      setMiniTournaments(prevTournaments => {
-        const newTournaments = [...prevTournaments];
-        newTournaments[currentTournamentIndex] = updatedTournament;
-        return newTournaments;
-      });
-
-      if (nextMatchIndex < currentTournament.length) {
-        setCurrentMatch(currentTournament[nextMatchIndex]);
-      } else {
-        conductNextMiniTournament();
+      if (nextRoundMatches.length === 2) {
+        setSemifinalists(currentMatches.flatMap(match => [match.quote1, match.quote2]));
       }
-    } else if (phase === 'final') {
-      const currentMatchIndex = swissTournament[currentRound].findIndex(match => match === currentMatch);
-      const winner = currentMatch.quote1.id === winnerId ? currentMatch.quote1 : currentMatch.quote2;
-      winner.score = (winner.score || 0) + 1;
-
-      // Update the current match with the winner
-      const updatedMatch = { ...currentMatch, winner: winnerId };
-      const updatedRound = [...swissTournament[currentRound]];
-      updatedRound[currentMatchIndex] = updatedMatch;
-
-      setSwissTournament(prevTournament => {
-        const newTournament = [...prevTournament];
-        newTournament[currentRound] = updatedRound;
-        return newTournament;
-      });
-
-      if (currentMatchIndex < swissTournament[currentRound].length - 1) {
-        setCurrentMatch(swissTournament[currentRound][currentMatchIndex + 1]);
-      } else if (currentRound < 3) {
-        setCurrentRound(prevRound => prevRound + 1);
-        setCurrentMatch(swissTournament[currentRound + 1][0]);
-      } else {
-        finalizeTournament();
-      }
+    } else {
+      finalizeTournament();
     }
   };
 
   const finalizeTournament = () => {
     console.log('Finalizing tournament');
     setPhase('completed');
-    setCurrentMatch(null);
-    const finalRankings = swissTournament[3]
-      .flatMap(match => [match.quote1, match.quote2])
-      .sort((a, b) => b.score - a.score);
-    setFinalRankings(finalRankings);
+    const rankings = getFinalRankings(currentMatches, semifinalists);
+    setFinalRankings(rankings);
   };
 
   return (
@@ -168,23 +101,12 @@ function TournamentManager({ quotes }) {
         <h3>Statistics</h3>
         <p>Matches Completed: {stats.matchesCompleted}</p>
         <p>Quotes in Contention: {stats.quotesInContention}</p>
-        {phase === 'initial' && <p>Mini-tournaments completed: {miniTournaments.length}/{NUM_MINI_TOURNAMENTS}</p>}
-        {phase === 'final' && <p>Current Round: {currentRound + 1}/4</p>}
-        {stats.topQuotes.length > 0 && (
-          <div>
-            <h4>Top 16 Quotes:</h4>
-            <ol>
-              {stats.topQuotes.map((quote, index) => (
-                <li key={quote.id}>{quote.text.substring(0, 50)}... (Score: {aggregatedScores[quote.id]})</li>
-              ))}
-            </ol>
-          </div>
-        )}
+        <p>Current Round: {stats.currentRound}</p>
       </div>
-      {currentMatch && (
+      {phase === 'ongoing' && currentMatches[currentMatchIndex] && (
         <QuoteComparison
-          quote1={currentMatch.quote1}
-          quote2={currentMatch.quote2}
+          quote1={currentMatches[currentMatchIndex].quote1}
+          quote2={currentMatches[currentMatchIndex].quote2}
           onVote={handleVote}
         />
       )}
@@ -193,7 +115,7 @@ function TournamentManager({ quotes }) {
           <h3>Final Rankings</h3>
           <ol>
             {finalRankings.map((quote, index) => (
-              <li key={quote.id}>{quote.text} (Score: {quote.score})</li>
+              <li key={quote.id}>{quote.text} (Place: {index + 1})</li>
             ))}
           </ol>
           <button onClick={startNewTournament}>Start New Tournament</button>

@@ -6,72 +6,62 @@ function shuffleArray(array) {
   return array;
 }
 
-export function conductMiniTournament(quotes) {
-  // Reduced from 50 to 10 for faster testing
-  const selectedQuotes = shuffleArray(quotes).slice(0, 10);
+export function initializeTournament(quotes) {
+  const selectedQuotes = shuffleArray(quotes).slice(0, 64);
   const matches = [];
 
   for (let i = 0; i < selectedQuotes.length; i += 2) {
-    if (i + 1 < selectedQuotes.length) {
-      matches.push({
-        quote1: selectedQuotes[i],
-        quote2: selectedQuotes[i + 1],
-      });
-    }
+    matches.push({
+      quote1: selectedQuotes[i],
+      quote2: selectedQuotes[i + 1],
+      winner: null
+    });
   }
 
   return matches;
 }
 
-export function aggregateScores(miniTournaments) {
-  const scores = {};
+export function advanceToNextRound(currentMatches) {
+  const winners = currentMatches.map(match => match.winner);
+  const nextRoundMatches = [];
 
-  miniTournaments.forEach(tournament => {
-    tournament.forEach((match, index) => {
-      const points = tournament.length - index;
-      const winnerId = match.winner;
-      scores[winnerId] = (scores[winnerId] || 0) + points;
+  for (let i = 0; i < winners.length; i += 2) {
+    nextRoundMatches.push({
+      quote1: winners[i],
+      quote2: winners[i + 1],
+      winner: null
     });
-  });
-
-  return scores;
-}
-
-export function conductSwissTournament(topQuotes) {
-  const players = topQuotes.map(quote => ({ ...quote, score: 0, opponents: [] }));
-  const rounds = 4;
-  const tournamentRounds = [];
-
-  for (let round = 0; round < rounds; round++) {
-    const roundMatches = pairPlayers(players);
-    tournamentRounds.push(roundMatches);
-
-    roundMatches.forEach(match => {
-      match.quote1.opponents.push(match.quote2.id);
-      match.quote2.opponents.push(match.quote1.id);
-    });
-
-    players.sort((a, b) => b.score - a.score);
   }
 
-  return tournamentRounds;
+  return nextRoundMatches;
 }
 
-function pairPlayers(players) {
-  const pairs = [];
-  const unpaired = [...players];
-
-  while (unpaired.length > 1) {
-    const player1 = unpaired.shift();
-    let opponent = unpaired.find(p => !player1.opponents.includes(p.id));
-
-    if (!opponent) {
-      opponent = unpaired[0];
-    }
-
-    unpaired.splice(unpaired.indexOf(opponent), 1);
-    pairs.push({ quote1: player1, quote2: opponent });
+export function getRoundName(matchesCount) {
+  switch (matchesCount) {
+    case 32: return "Round of 64 (First Round)";
+    case 16: return "Round of 32 (Second Round)";
+    case 8: return "Round of 16 (Third Round)";
+    case 4: return "Round of 8 (Fourth Round or Quarterfinals)";
+    case 2: return "Semifinals";
+    case 1: return "Final";
+    default: return "Tournament Completed";
   }
+}
 
-  return pairs;
+export function getFinalRankings(matches, semifinalists) {
+  const final = matches[0];
+  const champion = final.winner;
+  const runnerUp = final.quote1.id === champion.id ? final.quote2 : final.quote1;
+  
+  const thirdPlaceMatch = {
+    quote1: semifinalists.find(q => q.id !== final.quote1.id && q.id !== final.quote2.id),
+    quote2: semifinalists.find(q => q.id !== final.quote1.id && q.id !== final.quote2.id && q.id !== semifinalists[0].id)
+  };
+
+  return [
+    champion,
+    runnerUp,
+    thirdPlaceMatch.quote1,
+    thirdPlaceMatch.quote2
+  ];
 }
