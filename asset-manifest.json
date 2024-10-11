@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/champion_quote/static/css/main.63856e8b.css",
-    "main.js": "/champion_quote/static/js/main.feecb52b.js",
+    "main.js": "/champion_quote/static/js/main.0874f235.js",
     "index.html": "/champion_quote/index.html",
     "main.63856e8b.css.map": "/champion_quote/static/css/main.63856e8b.css.map",
-    "main.feecb52b.js.map": "/champion_quote/static/js/main.feecb52b.js.map"
+    "main.0874f235.js.map": "/champion_quote/static/js/main.0874f235.js.map"
   },
   "entrypoints": [
     "static/css/main.63856e8b.css",
-    "static/js/main.feecb52b.js"
+    "static/js/main.0874f235.js"
   ]
 }
